@@ -1,0 +1,342 @@
+
+<!--
+Code Writen by Bryan Williams (excluding jquery and d3.js)
+-->
+
+<!DOCTYPE html>
+<meta charset="utf-8">
+<html>
+<head>
+    <title>Graph Theory</title>
+    <script src="http://code.jquery.com/jquery-1.10.1.min.js"></script>
+    <script src="http://d3js.org/d3.v3.min.js"></script>
+    <style>
+        body {
+            background-color: #4d944d;
+            
+        }
+        
+        h1 {
+            color: #242424;
+        }
+        
+        svg {
+            background-color: white;
+        }
+        
+        .graph_container{
+            position: absolute;
+            left: 50%;
+            margin-left: -400px;
+        }
+        
+        .node{
+            fill: grey;
+        }
+    
+        .edge{
+            fill:#cccddd;
+        }
+    </style>
+    <script>
+        
+        var matrix = [];
+        
+        var width = 800;
+        var height = 600;
+        var rad = 15;
+        var dragable = 0;
+        var mousepos = {x: 0,y: 0};
+        var node_selected = "NONE";
+        var edge_selected = "NONE";
+        
+        
+        $('document').ready(function(){
+            
+            Init();
+            $('#add_node').click(Add_Node);
+            $('#remove_node').click(Remove_Node);
+            $('#add_edge').click(Add_Edge);
+            $('#remove_edge').click(Remove_Edge);
+            $('#print').click(Print);
+            $('#display').click(Display_Final_Graph);
+            if (matrix.length != 0) {
+                Draw();
+            }
+        });
+        
+        function Init() {
+            d3.select(".graph").append("svg").attr("id","simple_graph").attr("width",width).attr("height",height).style("border","1px solid #cccccc");
+             $('#simple_graph').mousemove(function(e){
+                                                        var offset = $(this).offset();
+                                                        mousepos.x = e.pageX - offset.left; //record mouse position
+                                                        mousepos.y = e.pageY - offset.top;
+                                                        
+                                                        if (dragable == 1 && node_selected != "NONE" && !node_selected.match(/_no_end_node/)) { //if the 
+                                                            //$("#" + node_selected).attr("cx",e.pageX);
+                                                            //$("#" + node_selected).attr("cy",e.pageY);
+                                                            //console.log(e.pageX + "  " + e.pageY);
+                                                            matrix[node_selected].x = mousepos.x;
+                                                            matrix[node_selected].y = mousepos.y;
+                                                            
+                                                            Draw();
+                                                            //console.log(matrix[node_selected].x  + "==  "+ node_selected +" ==" + matrix[node_selected].x);
+                                                        }
+                                                        
+                                                        if (dragable == 1 && node_selected != "NONE" && node_selected.match(/_no_end_node/)) {
+                                                            var temp_array = node_selected.split("_");
+                                                            
+                                                            $("#" + temp_array[0] + "_no_end_node").attr("cx",mousepos.x);
+                                                            $("#" + temp_array[0] + "_no_end_node").attr("cy",mousepos.y);
+                                                            $("#edge_" + temp_array[0]).attr("x2",mousepos.x);
+                                                            $("#edge_" + temp_array[0]).attr("y2",mousepos.y);
+                                                        }
+                                                        
+                                                    }).mouseup(function(){
+                                                                            if (dragable == 1 && node_selected != "NONE" && node_selected.match(/_no_end_node/)) {
+                                                                                var temp_array = node_selected.split("_");
+                                                                                for (var z = 0; z < matrix.length; ++z) {
+                                                                                    if ((mousepos.x < matrix[z].x + rad && mousepos.x > matrix[z].x - rad) && (mousepos.y < matrix[z].y + rad && mousepos.y > matrix[z].y - rad)) {
+                                                                                        //code
+                                                                                        var node = "#" + temp_array[0] + "_no_end_node";
+                                                                                        //console.log(node);
+                                                                                        $(node).remove();
+                                                                                        matrix[z].adj[temp_array[0]] = 1;
+                                                                                        matrix[temp_array[0]].adj[z] = 1;
+                                                                                        --matrix[temp_array[0]].adj[temp_array[0]];
+                                                                                        node_selected = "NONE";
+                                                                                        edge_selected = "NONE";
+                                                                                        Draw();
+                                                                                        break;
+                                                                                    }
+                                                                                }
+                                                                            }
+                                                                            dragable = 0;
+                                                                        });
+        }
+        
+        function Draw() {
+            //$("#dubug").text("<p></p>");
+            //For debugging
+            //for (var b = 0; b < matrix.length; ++b) {  //For debugging
+              //  $("#debug").text("x: "+ matrix[b].x +" y:"+ matrix[b].y +" adj: "+ matrix[b].adj.toString() +"");
+            //}
+            
+            d3.selectAll("circle.node,line.edge,circle.no_end_node").remove();
+            for (var z = 0; z < matrix.length; ++z) {
+                
+                for (var t = 0; t < matrix[z].adj.length; ++t) {
+                    if (matrix[z].adj[t] == 1 && z != t) {
+                        d3.select("#simple_graph").append("line")
+                        .attr("x1",matrix[z].x)
+                        .attr("y1",matrix[z].y)
+                        .attr("x2",matrix[t].x)
+                        .attr("y2",matrix[t].y)
+                        .style("stroke","#000000").style("stroke-width","4")
+                        .attr("class","edge")
+                        .attr("id",z + "_" + t)
+                        .on("mousedown", function(){
+                                if (edge_selected != "NONE") {
+                                    $("#" + edge_selected).css("stroke","#000000");//change the prevouse selected edge to black
+                                }
+                                
+                                edge_selected = this.id;
+                                //$(this).attr("stroke-width","4");
+                                $("#" + edge_selected).css("stroke","#cccccc");//change the selected edge to light grey
+                                if (node_selected != "NONE") {
+                                    $("#" + node_selected).css("fill","Navy"); //change the previous selected node to Navy 
+                                    node_selected = "NONE";
+                                }
+                                //console.log(node_selected + "  " + edge_selected);
+                            });
+                    }
+                    
+                    if (matrix[z].adj[t] > 0 && z == t) {
+                        d3.select("#simple_graph").append("line")
+                        .attr("x1",matrix[z].x)
+                        .attr("y1",matrix[z].y)
+                        .attr("x2",matrix[z].x + 30)
+                        .attr("y2",matrix[z].y + 30)
+                        .style("stroke","#000000").style("stroke-width","2")
+                        .attr("class","edge")
+                        .attr("id","edge_" + z);
+                        
+                        d3.select("#simple_graph")
+                            .append("circle")
+                            .attr("class","no_end_node")
+                            .attr("id",z + "_no_end_node")
+                            .attr("r",5)
+                            .attr("cx",matrix[z].x + 30)
+                            .attr("cy",matrix[z].y + 30)
+                            .on("mousedown", function(){
+                                dragable = 1;
+                                node_selected = this.id;
+                                //console.log(this.id);
+                                if (edge_selected != "NONE") {
+                                    $("#" + edge_selected).css("stroke","#cccccc");
+                                    edge_selected = "NONE";
+                                }
+                                //console.log(node_selected + "  " + edge_selected);
+                            });
+                    }
+                }
+            }
+            
+            for (var i = 0; i < matrix.length; ++i) {
+                
+                d3.select("#simple_graph").append("circle")
+                .attr("class","node")
+                .attr("id",i)
+                .attr("r",rad)
+                .attr("cx",matrix[i].x)
+                .attr("cy",matrix[i].y)
+                .on("mousedown", function(){
+                    dragable = 1;
+                    $("#" + node_selected).css("fill","grey");//change the previous node to grey
+                    node_selected = this.id;
+                    $("#" + node_selected).css("fill","#000000"); //change the current node to light blue
+                    if (edge_selected != "NONE") {
+                        $("#" + edge_selected).css("stroke","#000000");//change the current edge back to black and deselect 
+                        edge_selected = "NONE";
+                    }
+                    //console.log(node_selected + "  " + edge_selected);
+                });
+                //.style("border","2px solid black");
+                //d3.select('#' + node_selected).style("fill","#0000CD");
+                if(node_selected == i)
+                {
+                    $("#" + node_selected).css("fill","#000000");
+                }
+            }
+            
+            
+        }
+        
+        
+        function Add_Node() {
+            //code
+            matrix.push({x:10,y:10,id:0,adj:[]});
+            matrix.id = matrix.length;
+            for (var i = 0; i < matrix.length; ++i) {
+                
+                    matrix[matrix.length - 1].adj[i] = "0";
+                    matrix[i].adj[matrix.length - 1] = "0";
+  
+            }
+            Draw();
+        }
+        
+        function Remove_Node() {
+            //code
+            if (node_selected != "NONE") {
+                //code
+            
+                matrix.splice(node_selected,1);
+            
+                for (var i = 0; i < matrix.length; ++i) {
+                    matrix[i].adj.splice(node_selected,1);
+                }
+                Draw();
+            }
+            else
+            {
+                alert("No Node Selected");
+            }
+        }
+        
+        function Add_Edge() {
+            if (node_selected != "NONE" && node_selected != null) {
+                ++matrix[node_selected].adj[node_selected];
+                Draw();
+            }
+            
+        }
+        
+        function Remove_Edge() {
+            //code
+            if (edge_selected != "NONE") {
+                var edge = edge_selected.split("_");
+                matrix[edge[0]].adj[edge[1]] = 0;
+                matrix[edge[1]].adj[edge[0]] = 0;
+                Draw();
+            }
+            else
+            {
+                alert("No Edge Selected");   
+            }   
+        }
+        
+        function Print() {
+            //code  
+            var printContents = document.getElementById('graph').innerHTML;     
+            var originalContents = document.body.innerHTML;
+            
+            var temp = "";
+            
+            if (matrix.length > 0) {
+                
+                for (var z = 0; z < matrix.length; ++z) {
+                    temp = temp + "<tr>";
+                    for (var t = 0; t < matrix[z].adj.length; ++t) {
+                        temp = temp + "<td>" + matrix[z].adj[t] + "<td>";
+                    }
+                    temp = temp + "</tr>";
+                }
+            }
+            
+            printContents = printContents + "<style>td{width:10px;}</style><div>Adjacency Matrix: <table>" + temp + "</table></div>";
+            document.body.innerHTML = printContents;
+            //var myWindow=window.open('','','width=200,height=100');
+            //myWindow.document.write(printContents);
+            //myWindow.focus();
+            window.print();      
+            document.body.innerHTML = originalContents;
+        }
+        
+        function Display_Final_Graph() {
+            //code
+            //code  
+            var printContents = document.getElementById('graph').innerHTML;     
+            var originalContents = document.body.innerHTML;
+            
+            var temp = "";
+            
+            if (matrix.length > 0) {
+                
+                for (var z = 0; z < matrix.length; ++z) {
+                    temp = temp + "<tr>";
+                    for (var t = 0; t < matrix[z].adj.length; ++t) {
+                        temp = temp + "<td>" + matrix[z].adj[t] + "<td>";
+                    }
+                    temp = temp + "</tr>";
+                }
+            }
+            
+            printContents = printContents + "<style>td{width:10px;}</style><div>Adjacency Matrix: <table>" + temp + "</table></div>";
+            //document.body.innerHTML = printContents;
+            var myWindow=window.open('','','width=200,height=100');
+            myWindow.document.write(printContents);
+            myWindow.focus();
+            //window.print();      
+            //document.body.innerHTML = originalContents;
+        }
+        
+    </script>   
+</head>
+<body>
+    
+    <div class="graph_container" id="graph_container">
+        <h1>Simple Graph</h1>
+        <div class="graph" id="graph"></div>
+        Simple Graph Actions:
+        <button id="add_node">Add Node</button>
+        <button id="remove_node">Remove Node</button>
+        <button id="add_edge">Add Edge</button>
+        <button id="remove_edge">Remove Edge</button>
+        <button id="print">Print</button>
+        <button id="display">Display Final graph</button>
+    </div>
+    
+    <div id="debug"></div>
+</body>
+</html>
