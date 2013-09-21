@@ -1,4 +1,3 @@
-
 <!--
 Code Writen by Bryan Williams (excluding jquery and d3.js)
 -->
@@ -58,7 +57,6 @@ Code Writen by Bryan Williams (excluding jquery and d3.js)
             $('#remove_node').click(Remove_Node);
             $('#add_edge').click(Add_Edge);
             $('#remove_edge').click(Remove_Edge);
-            $('#print').click(Print);
             $('#display').click(Display_Final_Graph);
             if (matrix.length != 0) {
                 Draw();
@@ -266,32 +264,7 @@ Code Writen by Bryan Williams (excluding jquery and d3.js)
             }   
         }
         
-        function Print() {
-            //code  
-            var printContents = document.getElementById('graph').innerHTML;     
-            var originalContents = document.body.innerHTML;
-            
-            var temp = "";
-            
-            if (matrix.length > 0) {
-                
-                for (var z = 0; z < matrix.length; ++z) {
-                    temp = temp + "<tr>";
-                    for (var t = 0; t < matrix[z].adj.length; ++t) {
-                        temp = temp + "<td>" + matrix[z].adj[t] + "<td>";
-                    }
-                    temp = temp + "</tr>";
-                }
-            }
-            
-            printContents = printContents + "<style>td{width:10px;}</style><div>Adjacency Matrix: <table>" + temp + "</table></div>";
-            document.body.innerHTML = printContents;
-            //var myWindow=window.open('','','width=200,height=100');
-            //myWindow.document.write(printContents);
-            //myWindow.focus();
-            window.print();      
-            document.body.innerHTML = originalContents;
-        }
+        
         
         function Display_Final_Graph() {
             //code
@@ -333,7 +306,6 @@ Code Writen by Bryan Williams (excluding jquery and d3.js)
         <button id="remove_node">Remove Node</button>
         <button id="add_edge">Add Edge</button>
         <button id="remove_edge">Remove Edge</button>
-        <button id="print">Print</button>
         <button id="display">Display Final graph</button>
     </div>
     
